@@ -180,6 +180,16 @@
                                 <MONGODB_PORT>${embeddedMongoDbPort}</MONGODB_PORT>
                                 <MONGODB_HOSTNAME>${embeddedMongoDbBindIp}</MONGODB_HOSTNAME>
                             </environmentVariables>
+                            <systemProperties>
+                                <property>
+                                    <name>MONGODB_HOSTNAME</name>
+                                    <value>${embeddedMongoDbBindIp}</value>
+                                </property>
+                                <property>
+                                    <name>MONGODB_PORT</name>
+                                    <value>${embeddedMongoDbPort}</value>
+                                </property>
+                            </systemProperties>
                             <forkMode>once</forkMode>
                         </configuration>
                     </plugin>
