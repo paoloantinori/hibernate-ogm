@@ -162,16 +162,15 @@ if( true == ${docker.remove.container} ){
                       <plugin>
                           <artifactId>maven-failsafe-plugin</artifactId>
                           <configuration>
-<!--                               <systemProperties>
-                                  <property>
-                                      <name>MONGODB_HOSTNAME</name>
-                                      <value>${dockerIp}</value>
-                                  </property>
-                                  <property>
-                                      <name>MONGODB_PORT</name>
-                                      <value>${dockerPort}</value>
-                                  </property>
-                              </systemProperties> -->
+                              <environmentVariables>
+                                <MONGODB_HOSTNAME>${dockerIp}</MONGODB_HOSTNAME>
+                                <MONGODB_PORT>${dockerPort}</MONGODB_PORT>
+                              </environmentVariables>
+                          </configuration>
+                      </plugin>
+                      <plugin>
+                          <artifactId>maven-surefire-plugin</artifactId>
+                          <configuration>
                               <environmentVariables>
                                 <MONGODB_HOSTNAME>${dockerIp}</MONGODB_HOSTNAME>
                                 <MONGODB_PORT>${dockerPort}</MONGODB_PORT>
