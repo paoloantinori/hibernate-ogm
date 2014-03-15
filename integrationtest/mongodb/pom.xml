@@ -9,11 +9,6 @@
     <name>Hibernate OGM Integration Tests for MongoDB</name>
     <description>Hibernate OGM Integration Tests for MongoDB</description>
 
-    <properties>
-        <docker.image>pantinor/centos-mongodb</docker.image>
-        <docker.remove.container>true</docker.remove.container>
-    </properties>
-
     <build>
         <testResources>
             <testResource>
@@ -63,14 +58,18 @@
                     <name>useDocker</name>
                 </property>
             </activation>
+            <properties>
+                <docker.image>pantinor/centos-mongodb</docker.image>
+                <docker.daemon.ip>127.0.0.1</docker.daemon.ip>
+                <docker.daemon.port>4243</docker.daemon.port>
+                <docker.remove.container>true</docker.remove.container>
+                <docker.container.service.port>27017</docker.container.service.port>
+            </properties>
             <build>
                 <plugins>
                       <plugin>
                           <groupId>org.codehaus.gmaven</groupId>
                           <artifactId>gmaven-plugin</artifactId>
-<!--                           <configuration>
-                               <providerSelection>2.0</providerSelection>
-                           </configuration> -->
                           <executions>
                               <execution>
                                   <id>start-docker-images</id>
@@ -86,8 +85,8 @@ import static com.jayway.restassured.matcher.RestAssuredMatchers.*
 import com.jayway.restassured.path.json.JsonPath
 import com.jayway.restassured.response.Response
 
-RestAssured.baseURI = "http://127.0.0.1"
-RestAssured.port = 4243
+RestAssured.baseURI = "http://${docker.daemon.ip}"
+RestAssured.port = ${docker.daemon.port}
 
 // here you can specify advance docker params, but the mandatory one is the name of the Image you want to use
 def dockerImageConf = '{"Image":"${docker.image}"}'
@@ -124,7 +123,7 @@ def ip = with().get("/containers/$containerId/json").path("NetworkSettings.IPAdd
 log.info "Container started with ip: $ip" 
 
 project.properties.setProperty("dockerIp", "$ip")
-project.properties.setProperty("dockerPort", "27017")
+project.properties.setProperty("dockerPort", "${docker.container.service.port}")
 ]]>
                                       </source>
                                   </configuration>
@@ -141,8 +140,8 @@ import com.jayway.restassured.RestAssured
 import static com.jayway.restassured.RestAssured.*
 import static com.jayway.restassured.matcher.RestAssuredMatchers.*
 
-RestAssured.baseURI = "http://127.0.0.1"
-RestAssured.port = 4243
+RestAssured.baseURI = "http://${docker.daemon.ip}"
+RestAssured.port = ${docker.daemon.port}
 
 def containerId = project.properties.getProperty('containerId')
 log.info "Stopping Docker container $containerId"
