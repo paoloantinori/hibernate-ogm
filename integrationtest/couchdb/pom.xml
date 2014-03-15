@@ -64,5 +64,140 @@
                 </plugins>
             </build>
         </profile>
+        <profile>
+            <id>docker-couchdb</id>
+            <activation>
+                <property>
+                    <name>useDocker</name>
+                </property>
+            </activation>
+            <properties>
+                <docker.image>klaemo/couchdb</docker.image>
+                <docker.daemon.ip>127.0.0.1</docker.daemon.ip>
+                <docker.daemon.port>4243</docker.daemon.port>
+                <docker.remove.container>true</docker.remove.container>
+                <docker.container.service.port>5984</docker.container.service.port>
+            </properties>
+            <dependencies>
+                <dependency>
+                    <groupId>com.jayway.restassured</groupId>
+                    <artifactId>rest-assured</artifactId>
+                    <version>1.8.1</version>
+                    <scope>test</scope>
+                </dependency>
+            </dependencies>
+            <build>
+                <plugins>
+                      <plugin>
+                          <groupId>org.codehaus.gmaven</groupId>
+                          <artifactId>gmaven-plugin</artifactId>
+                          <executions>
+                              <execution>
+                                  <id>start-docker-images</id>
+                                  <phase>test</phase>
+                                  <goals>
+                                      <goal>execute</goal>
+                                  </goals>
+                                  <configuration>
+                                      <source><![CDATA[
+import com.jayway.restassured.RestAssured
+import static com.jayway.restassured.RestAssured.*
+import static com.jayway.restassured.matcher.RestAssuredMatchers.*
+import com.jayway.restassured.path.json.JsonPath
+import com.jayway.restassured.response.Response
+
+RestAssured.baseURI = "http://${docker.daemon.ip}"
+RestAssured.port = ${docker.daemon.port}
+
+// here you can specify advance docker params, but the mandatory one is the name of the Image you want to use
+def dockerImageConf = '{"Image":"${docker.image}"}'
+def dockerImageName = JsonPath.from(dockerImageConf).get("Image")
+
+log.info "Creating new Docker container from image $dockerImageName"
+def response =  with().body(dockerImageConf).post("/containers/create")
+
+if( 404 == response.statusCode ) {
+    log.info "Docker image not found in local repo. Trying to dowload image '$dockerImageName' from remote repos"
+    response = with().parameter("fromImage", dockerImageName).post("/images/create")
+    def message = response.asString()
+    //odd: rest api always returns 200 and doesn't return proper json. I have to grep
+    if( message.contains("HTTP code: 404") ) fail("Image $dockerImageName NOT FOUND remotely. Abort. $message}")
+    log.info "Image downloaded"
+    
+    // retry to create the container
+    response = with().body(dockerImageConf).post("/containers/create")
+    if( 404 == response.statusCode ) fail("Unable to create container with conf $dockerImageConf: ${response.asString()}")
+}
+
+def containerId = response.jsonPath().get("Id")
+
+log.info "Container created with id $containerId"
+
+// set the containerId to be retrieved later during the stop phase
+project.properties.setProperty("containerId", "$containerId")
+
+log.info "Starting container $containerId"
+with().post("/containers/$containerId/start").asString()
+
+def ip = with().get("/containers/$containerId/json").path("NetworkSettings.IPAddress")
+
+log.info "Container started with ip: $ip" 
+
+project.properties.setProperty("dockerIp", "$ip")
+project.properties.setProperty("dockerPort", "${docker.container.service.port}")
+]]>
+                                      </source>
+                                  </configuration>
+                              </execution>
+                              <execution>
+                                  <id>stop-docker-images</id>
+                                  <phase>post-integration-test</phase>
+                                  <goals>
+                                      <goal>execute</goal>
+                                  </goals>
+                                  <configuration>
+                                      <source><![CDATA[
+import com.jayway.restassured.RestAssured
+import static com.jayway.restassured.RestAssured.*
+import static com.jayway.restassured.matcher.RestAssuredMatchers.*
+
+RestAssured.baseURI = "http://${docker.daemon.ip}"
+RestAssured.port = ${docker.daemon.port}
+
+def containerId = project.properties.getProperty('containerId')
+log.info "Stopping Docker container $containerId"
+with().post("/containers/$containerId/stop")
+log.info "Docker container stopped"
+if( true == ${docker.remove.container} ){
+    with().delete("/containers/$containerId")
+    log.info "Docker container deleted"
+}
+]]>
+                                      </source>
+                                  </configuration>
+                              </execution>
+                          </executions>
+                      </plugin>
+                      <plugin>
+                          <artifactId>maven-failsafe-plugin</artifactId>
+                          <configuration>
+                              <environmentVariables>
+                                <COUCHDB_HOSTNAME>${dockerIp}</COUCHDB_HOSTNAME>
+                                <COUCHDB_PORT>${docker.container.service.port}</COUCHDB_PORT>
+                              </environmentVariables>
+                          </configuration>
+                      </plugin>
+                      <plugin>
+                          <artifactId>maven-surefire-plugin</artifactId>
+                          <configuration>
+                              <environmentVariables>
+                                <COUCHDB_HOSTNAME>${dockerIp}</COUCHDB_HOSTNAME>
+                                <COUCHDB_PORT>${docker.container.service.port}</COUCHDB_PORT>
+                              </environmentVariables>
+                          </configuration>
+                      </plugin>
+                </plugins>
+            </build>
+        </profile>
     </profiles>
 </project>
