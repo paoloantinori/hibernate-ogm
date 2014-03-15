@@ -42,12 +42,6 @@
             <version>${project.version}</version>
             <type>test-jar</type>
         </dependency>
-        <dependency>
-            <groupId>com.jayway.restassured</groupId>
-            <artifactId>rest-assured</artifactId>
-            <version>1.8.1</version>
-            <scope>test</scope>
-        </dependency>
     </dependencies>
 
     <profiles>
@@ -65,6 +59,14 @@
                 <docker.remove.container>true</docker.remove.container>
                 <docker.container.service.port>27017</docker.container.service.port>
             </properties>
+            <dependencies>
+                <dependency>
+                    <groupId>com.jayway.restassured</groupId>
+                    <artifactId>rest-assured</artifactId>
+                    <version>1.8.1</version>
+                    <scope>test</scope>
+                </dependency>
+            </dependencies>
             <build>
                 <plugins>
                       <plugin>
