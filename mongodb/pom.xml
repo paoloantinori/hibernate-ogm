@@ -244,6 +244,7 @@
                     <scope>test</scope>
                 </dependency>
             </dependencies>
+<!--             needed due to a conflict with enforcer rules -->
             <dependencyManagement>
                 <dependencies>
                     <dependency>
@@ -261,7 +262,7 @@
                           <executions>
                               <execution>
                                   <id>start-docker-images</id>
-                                  <phase>initialize</phase>
+                                  <phase>process-test-classes</phase>
                                   <goals>
                                       <goal>execute</goal>
                                   </goals>
