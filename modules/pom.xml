@@ -136,5 +136,21 @@
                 </dependency>
             </dependencies>
         </profile>
+        <profile>
+            <id>couchdb-docker</id>
+            <activation>
+                <property>
+                    <name>useDocker</name>
+                </property>
+            </activation>
+            <dependencies>
+                <dependency>
+                    <groupId>org.hibernate.ogm</groupId>
+                    <artifactId>hibernate-ogm-couchdb</artifactId>
+                    <version>${project.version}</version>
+                    <optional>true</optional>
+                </dependency>
+            </dependencies>
+        </profile>
     </profiles>
 </project>
