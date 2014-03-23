@@ -247,6 +247,10 @@ if( true == ${docker.remove.container} ){
                     <plugin>
                         <artifactId>maven-failsafe-plugin</artifactId>
                         <configuration>
+                            <environmentVariables>
+                                <MONGODB_PORT>${embeddedMongoDbPort}</MONGODB_PORT>
+                                <MONGODB_HOSTNAME>${embeddedMongoDbBindIp}</MONGODB_HOSTNAME>
+                            </environmentVariables>
                             <systemProperties>
                                 <property>
                                     <name>MONGODB_HOSTNAME</name>
